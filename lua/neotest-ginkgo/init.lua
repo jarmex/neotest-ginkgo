@@ -4,25 +4,18 @@ local lib = require("neotest.lib")
 local logger = require("neotest.logging")
 local async = require("neotest.async")
 local utils = require("neotest-ginkgo.utils")
-local output = require("neotest-ginkgo.output")
 local test_statuses = require("neotest-ginkgo.test_status")
-
-print("Loading neotest-ginkgo")
-
-local get_args = function()
-  return {}
-end
 
 local recursive_run = function()
   return false
 end
 
 ---@type neotest.Adapter
-local adapter = { name = "neotest-ginkgo" }
+local GoLangNeotestAdapter = { name = "neotest-ginkgo" }
 
-adapter.root = lib.files.match_root_pattern("go.mod", "go.sum")
+GoLangNeotestAdapter.root = lib.files.match_root_pattern("go.mod", "go.sum")
 
-function adapter.is_test_file(file_path)
+function GoLangNeotestAdapter.is_test_file(file_path)
   if not vim.endswith(file_path, ".go") then
     return false
   end
@@ -34,7 +27,7 @@ end
 
 ---@param position neotest.Position The position to return an ID for
 ---@param namespaces neotest.Position[] Any namespaces the position is within
-function adapter._generate_position_id(position, namespaces)
+function GoLangNeotestAdapter._generate_position_id(position, namespaces)
   local prefix = {}
   for _, namespace in ipairs(namespaces) do
     if namespace.type ~= "file" then
@@ -47,59 +40,108 @@ end
 
 ---@async
 ---@return neotest.Tree| nil
-function adapter.discover_positions(path)
+function GoLangNeotestAdapter.discover_positions(path)
   local query = [[
     ;;query for Namespace or Context Block
     ((call_expression
-      function: (identifier) @func_name (#match? @func_name "^(Describe|Context)$")
-      arguments: (argument_list (_) @namespace.name (func_literal))
+      function: (identifier) @func_name (#match? @func_name "^(Describe|Context|When)$")
+      arguments: (argument_list (interpreted_string_literal) @namespace.name (func_literal))
     )) @namespace.definition
 
     ;;query for It or DescribeTable block
     ((call_expression
         function: (identifier) @func_name
-        arguments: (argument_list (_) @test.name (func_literal))
+        arguments: (argument_list (interpreted_string_literal) @test.name (func_literal))
     ) (#match? @func_name "^(It|DescribeTable)$")) @test.definition
+
+
   ]]
 
   return lib.treesitter.parse_positions(path, query, {
-    require_namespaces = false,
+    require_namespaces = true,
     nested_tests = true,
+    -- build_position = "require('neotest-ginkgo')._build_position",
     position_id = "require('neotest-ginkgo')._generate_position_id",
   })
 end
 
+local function get_default_strategy_config(strategy, command, cwd)
+  local config = {
+    dap = function()
+      return {
+        name = "Debug ginkgo Tests",
+        type = "go",
+        request = "launch",
+        mode = "test",
+        args = { unpack(command, 2) },
+        runtimeExecutable = command[1],
+        console = "integratedTerminal",
+        internalConsoleOptions = "neverOpen",
+        rootPath = "${workspaceFolder}",
+        cwd = cwd or "${workspaceFolder}",
+      }
+    end,
+  }
+  if config[strategy] then
+    return config[strategy]()
+  end
+end
+
 ---@async
 ---@param args neotest.RunArgs
----@return neotest.RunSpec
-function adapter.build_spec(args)
-  local results_path = async.fn.tempname()
-  local position = args.tree:data()
+---@return nil | neotest.RunSpec | neotest.RunSpec[]
+GoLangNeotestAdapter.build_spec = function(args)
+  local results_path = async.fn.tempname() .. ".json"
+  local tree = args.tree
+
+  if not tree then
+    return
+  end
+
+  local position = tree:data()
+
   local dir = "./"
   if recursive_run() then
     dir = "./..."
   end
+
   local location = position.path
   if fn.isdirectory(position.path) ~= 1 then
     location = fn.fnamemodify(position.path, ":h")
   end
+
   local command = vim.tbl_flatten({
     "cd",
     location,
     "&&",
     "ginkgo",
     "-v",
-    "-json",
-    utils.get_build_tags(),
-    vim.list_extend(get_args(), args.extra_args or {}),
-    dir,
+    -- "-json",
+    -- "-failfast",
   })
+
+  -- print(vim.inspect(position))
+  if position.type == "test" or position.type == "namespace" then
+    -- e.g.: id = '/Users/jarmex/Projects/go/testing/main_test.go::"Main"::can_multiply_up_two_numbers',
+    local testName = string.sub(position.id, string.find(position.id, "::") + 2)
+    testName, _ = string.gsub(testName, "::", " ")
+    testName, _ = string.gsub(testName, "_", " ") -- temporary fix for ginkgo
+    testName, _ = string.gsub(testName, '"', "")
+    vim.list_extend(command, { "--focus", '"' .. testName .. '"' })
+  else
+    vim.list_extend(command, { dir })
+  end
+
+  -- print(vim.inspect(command))
+
   return {
     command = table.concat(command, " "),
     context = {
       results_path = results_path,
       file = position.path,
+      name = position.name,
     },
+    strategy = get_default_strategy_config(args.strategy, command, position.path),
   }
 end
 
@@ -108,22 +150,45 @@ end
 ---@param result neotest.StrategyResult
 ---@param tree neotest.Tree
 ---@return table<string, neotest.Result[]>
-function adapter.results(spec, result, tree)
-  local go_root = utils.get_go_root(spec.context.file)
-  if not go_root then
-    return {}
-  end
-  local go_module = utils.get_go_module_name(go_root)
-  if not go_module then
-    return {}
-  end
-
+function GoLangNeotestAdapter.results(spec, result, tree)
   local success, lines = pcall(lib.files.read_lines, result.output)
   if not success then
     logger.error("neotest-ginkgo: could not read output: " .. lines)
     return {}
   end
-  return adapter.prepare_results(tree, lines, go_root, go_module)
+
+  return GoLangNeotestAdapter.prepare_results(tree, lines)
+end
+
+local isTestFailed = function(lines, testname)
+  testname = string.gsub(testname, '"', "")
+  local pattern = "%[%w+.*%].+%[It%]%s" .. testname
+
+  for _, text in ipairs(lines) do
+    for line in text:gmatch("[^\r\n]+") do
+      if line:find(pattern) then
+        return test_statuses.fail
+      end
+    end
+  end
+
+  return test_statuses.pass
+end
+
+local isTestAllFailed = function(lines)
+  local pattern = "(%u+)!.+%d+%s*Passed.+%d+%s*Failed.+%d+%s*Pending.+%d+%s*Skipped"
+
+  for _, text in ipairs(lines) do
+    for line in text:gmatch("[^\r\n]+") do
+      local status = line:match(pattern)
+      if status and status == "FAIL" then
+        -- print("Status: " .. status)
+        return test_statuses.fail
+      end
+    end
+  end
+
+  return test_statuses.pass
 end
 
 ---@param tree neotest.Tree
@@ -131,51 +196,33 @@ end
 ---@param go_root string
 ---@param go_module string
 ---@return table<string, neotest.Result[]>
-function adapter.prepare_results(tree, lines, go_root, go_module)
-  local tests, log = output.marshal_gotest_output(lines)
+function GoLangNeotestAdapter.prepare_results(tree, lines)
   local results = {}
-  local no_results = vim.tbl_isempty(tests)
   local empty_result_fname
-  local file_id
   empty_result_fname = async.fn.tempname()
-  fn.writefile(log, empty_result_fname)
+  fn.writefile(lines, empty_result_fname)
+
   for _, node in tree:iter_nodes() do
     local value = node:data()
-    if no_results then
-      results[value.id] = {
-        status = test_statuses.fail,
-        output = empty_result_fname,
-      }
-      break
-    end
+
     if value.type == "file" then
       results[value.id] = {
-        status = test_statuses.pass,
+        status = isTestAllFailed(lines),
         output = empty_result_fname,
       }
-      file_id = value.id
+    elseif value.type == "test" then
+      results[value.id] = {
+        status = isTestAllFailed(lines),
+        output = empty_result_fname,
+      }
     else
-      local normalized_id = utils.normalize_id(value.id, go_root, go_module)
-      local test_result = tests[normalized_id]
-      -- file level node
-      if test_result then
-        local fname = async.fn.tempname()
-        fn.writefile(test_result.output, fname)
-        results[value.id] = {
-          status = test_result.status,
-          short = table.concat(test_result.output, ""),
-          output = fname,
-        }
-        local errors = utils.get_errors_from_test(test_result, utils.get_filename_from_id(value.id))
-        if errors then
-          results[value.id].errors = errors
-        end
-        if test_result.status == test_statuses.fail and file_id then
-          results[file_id].status = test_statuses.fail
-        end
-      end
+      results[value.id] = {
+        status = isTestFailed(lines, value.name),
+        output = empty_result_fname,
+      }
     end
   end
+
   return results
 end
 
@@ -183,8 +230,16 @@ local is_callable = function(obj)
   return type(obj) == "function" or (type(obj) == "table" and obj.__call)
 end
 
-setmetatable(adapter, {
+setmetatable(GoLangNeotestAdapter, {
   __call = function(_, opts)
+    if is_callable(opts.experimental) then
+      get_experimental_opts = opts.experimental
+    elseif opts.experimental then
+      get_experimental_opts = function()
+        return opts.experimental
+      end
+    end
+
     if is_callable(opts.args) then
       get_args = opts.args
     elseif opts.args then
@@ -200,8 +255,8 @@ setmetatable(adapter, {
         return opts.recursive_run
       end
     end
-    return adapter
+    return GoLangNeotestAdapter
   end,
 })
 
-return adapter
+return GoLangNeotestAdapter

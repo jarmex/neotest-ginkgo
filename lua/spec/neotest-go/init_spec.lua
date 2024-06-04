@@ -49,75 +49,81 @@ end)
 
 describe("discover_positions", function()
   async.it("discovers positions in unit tests in many_table_test.go", function()
-    local path = vim.loop.cwd() .. "/neotest_go/many_table_test.go"
+    local path = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go"
     local positions = plugin.discover_positions(path):to_list()
 
     local expected_positions = {
       {
-        id = vim.loop.cwd() .. "/neotest_go/many_table_test.go",
+        id = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go",
         name = "many_table_test.go",
-        path = vim.loop.cwd() .. "/neotest_go/many_table_test.go",
+        path = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go",
         range = { 0, 0, 32, 0 },
         type = "file",
       },
       {
         {
-          id = vim.loop.cwd() .. "/neotest_go/many_table_test.go::TestSomeTest",
+          id = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go::TestSomeTest",
           name = "TestSomeTest",
-          path = vim.loop.cwd() .. "/neotest_go/many_table_test.go",
+          path = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go",
           range = { 8, 0, 31, 1 },
           type = "test",
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/many_table_test.go::TestSomeTest::AccessDenied1",
+            id = vim.loop.cwd()
+              .. "/neotest_ginkgo/many_table_test.go::TestSomeTest::AccessDenied1",
             name = '"AccessDenied1"',
-            path = vim.loop.cwd() .. "/neotest_go/many_table_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go",
             range = { 16, 2, 16, 118 },
             type = "test",
           },
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/many_table_test.go::TestSomeTest::AccessDenied2",
+            id = vim.loop.cwd()
+              .. "/neotest_ginkgo/many_table_test.go::TestSomeTest::AccessDenied2",
             name = '"AccessDenied2"',
-            path = vim.loop.cwd() .. "/neotest_go/many_table_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go",
             range = { 17, 2, 17, 118 },
             type = "test",
           },
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/many_table_test.go::TestSomeTest::AccessDenied3",
+            id = vim.loop.cwd()
+              .. "/neotest_ginkgo/many_table_test.go::TestSomeTest::AccessDenied3",
             name = '"AccessDenied3"',
-            path = vim.loop.cwd() .. "/neotest_go/many_table_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go",
             range = { 18, 2, 18, 118 },
             type = "test",
           },
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/many_table_test.go::TestSomeTest::AccessDenied4",
+            id = vim.loop.cwd()
+              .. "/neotest_ginkgo/many_table_test.go::TestSomeTest::AccessDenied4",
             name = '"AccessDenied4"',
-            path = vim.loop.cwd() .. "/neotest_go/many_table_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go",
             range = { 19, 2, 19, 118 },
             type = "test",
           },
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/many_table_test.go::TestSomeTest::AccessDenied5",
+            id = vim.loop.cwd()
+              .. "/neotest_ginkgo/many_table_test.go::TestSomeTest::AccessDenied5",
             name = '"AccessDenied5"',
-            path = vim.loop.cwd() .. "/neotest_go/many_table_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go",
             range = { 20, 2, 20, 118 },
             type = "test",
           },
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/many_table_test.go::TestSomeTest::AccessDenied6",
+            id = vim.loop.cwd()
+              .. "/neotest_ginkgo/many_table_test.go::TestSomeTest::AccessDenied6",
             name = '"AccessDenied6"',
-            path = vim.loop.cwd() .. "/neotest_go/many_table_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/many_table_test.go",
             range = { 21, 2, 21, 118 },
             type = "test",
           },
@@ -127,38 +133,38 @@ describe("discover_positions", function()
     assert.are.same(positions, expected_positions)
   end)
   async.it("discovers positions in unit tests in cases_test.go", function()
-    local path = vim.loop.cwd() .. "/neotest_go/cases_test.go"
+    local path = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go"
     local positions = plugin.discover_positions(path):to_list()
     local expected_positions = {
       {
-        id = vim.loop.cwd() .. "/neotest_go/cases_test.go",
+        id = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go",
         name = "cases_test.go",
-        path = vim.loop.cwd() .. "/neotest_go/cases_test.go",
+        path = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go",
         range = { 0, 0, 49, 0 },
         type = "file",
       },
       {
         {
-          id = vim.loop.cwd() .. "/neotest_go/cases_test.go::TestSubtract",
+          id = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go::TestSubtract",
           name = "TestSubtract",
-          path = vim.loop.cwd() .. "/neotest_go/cases_test.go",
+          path = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go",
           range = { 8, 0, 33, 1 },
           type = "test",
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/cases_test.go::TestSubtract::test_one",
+            id = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go::TestSubtract::test_one",
             name = '"test one"',
-            path = vim.loop.cwd() .. "/neotest_go/cases_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go",
             range = { 15, 2, 20, 3 },
             type = "test",
           },
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/cases_test.go::TestSubtract::test_two",
+            id = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go::TestSubtract::test_two",
             name = '"test two"',
-            path = vim.loop.cwd() .. "/neotest_go/cases_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go",
             range = { 21, 2, 26, 3 },
             type = "test",
           },
@@ -166,26 +172,26 @@ describe("discover_positions", function()
       },
       {
         {
-          id = vim.loop.cwd() .. "/neotest_go/cases_test.go::TestAdd",
+          id = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go::TestAdd",
           name = "TestAdd",
-          path = vim.loop.cwd() .. "/neotest_go/cases_test.go",
+          path = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go",
           range = { 35, 0, 48, 1 },
           type = "test",
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/cases_test.go::TestAdd::test_one",
+            id = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go::TestAdd::test_one",
             name = '"test one"',
-            path = vim.loop.cwd() .. "/neotest_go/cases_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go",
             range = { 36, 1, 38, 3 },
             type = "test",
           },
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/cases_test.go::TestAdd::test_two",
+            id = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go::TestAdd::test_two",
             name = '"test two"',
-            path = vim.loop.cwd() .. "/neotest_go/cases_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/cases_test.go",
             range = { 40, 1, 42, 3 },
             type = "test",
           },
@@ -196,56 +202,56 @@ describe("discover_positions", function()
     assert.are.same(positions, expected_positions)
   end)
   async.it("discovers positions in unit tests in map_table_test.go", function()
-    local path = vim.loop.cwd() .. "/neotest_go/map_table_test.go"
+    local path = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go"
     local positions = plugin.discover_positions(path):to_list()
     local expected_positions = {
       {
-        id = vim.loop.cwd() .. "/neotest_go/map_table_test.go",
+        id = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go",
         name = "map_table_test.go",
-        path = vim.loop.cwd() .. "/neotest_go/map_table_test.go",
+        path = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go",
         range = { 0, 0, 40, 0 },
         type = "file",
       },
       {
         {
-          id = vim.loop.cwd() .. "/neotest_go/map_table_test.go::TestSplit",
+          id = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go::TestSplit",
           name = "TestSplit",
-          path = vim.loop.cwd() .. "/neotest_go/map_table_test.go",
+          path = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go",
           range = { 8, 0, 28, 1 },
           type = "test",
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/map_table_test.go::TestSplit::simple",
+            id = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go::TestSplit::simple",
             name = '"simple"',
-            path = vim.loop.cwd() .. "/neotest_go/map_table_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go",
             range = { 14, 18, 14, 75 },
             type = "test",
           },
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/map_table_test.go::TestSplit::wrong_sep",
+            id = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go::TestSplit::wrong_sep",
             name = '"wrong sep"',
-            path = vim.loop.cwd() .. "/neotest_go/map_table_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go",
             range = { 15, 18, 15, 69 },
             type = "test",
           },
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/map_table_test.go::TestSplit::no_sep",
+            id = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go::TestSplit::no_sep",
             name = '"no sep"',
-            path = vim.loop.cwd() .. "/neotest_go/map_table_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go",
             range = { 16, 18, 16, 65 },
             type = "test",
           },
         },
         {
           {
-            id = vim.loop.cwd() .. "/neotest_go/map_table_test.go::TestSplit::trailing_sep",
+            id = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go::TestSplit::trailing_sep",
             name = '"trailing sep"',
-            path = vim.loop.cwd() .. "/neotest_go/map_table_test.go",
+            path = vim.loop.cwd() .. "/neotest_ginkgo/map_table_test.go",
             range = { 17, 18, 17, 76 },
             type = "test",
           },
@@ -260,7 +266,7 @@ describe("prepare_results", function()
   async.it(
     "check that we have file level test result as well as all nested results in cases_test.go",
     function()
-      local tests_folder = vim.loop.cwd() .. "/neotest_go"
+      local tests_folder = vim.loop.cwd() .. "/neotest_ginkgo"
       local test_file = tests_folder .. "/cases_test.go"
       local positions = plugin.discover_positions(test_file)
 
@@ -295,7 +301,8 @@ describe("prepare_results", function()
       for s in result:gmatch("[^\r\n]+") do
         table.insert(lines, s)
       end
-      local processed_results = plugin.prepare_results(positions, lines, tests_folder, "neotest_go")
+      local processed_results =
+        plugin.prepare_results(positions, lines, tests_folder, "neotest_ginkgo")
 
       for _, v in pairs(expected_keys) do
         assert.has_property(v, processed_results)
@@ -303,7 +310,7 @@ describe("prepare_results", function()
     end
   )
   async.it("check that we have correct file level test result status", function()
-    local tests_folder = vim.loop.cwd() .. "/neotest_go"
+    local tests_folder = vim.loop.cwd() .. "/neotest_ginkgo"
     local test_cases = {}
     test_cases["cases_test.go"] = { status = test_statuses.fail }
     test_cases["main_test.go"] = { status = test_statuses.pass }
@@ -350,7 +357,7 @@ describe("build_spec", function()
     local args = { tree = tree }
     local expected_command = "cd "
       .. vim.loop.cwd()
-      .. "/neotest_go && go test -v -json  -count=1 -timeout=60s ./"
+      .. "/neotest_ginkgo && go test -v -json  -count=1 -timeout=60s ./"
     local result = plugin.build_spec(args)
     assert.are.same(expected_command, result.command)
     assert.are.same(path, result.context.file)

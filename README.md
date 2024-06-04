@@ -1,4 +1,4 @@
-# neotest-ginkgo
+# neotest-go
 
 This plugin provides a go(lang) adapter for the [Neotest](https://github.com/rcarriga/neotest) framework.
 
@@ -10,7 +10,7 @@ Using packer:
 use({
   "nvim-neotest/neotest",
   requires = {
-    "jarmex/neotest-ginkgo",
+    "nvim-neotest/neotest-go",
     -- Your other test adapters here
   },
   config = function()
@@ -28,7 +28,7 @@ use({
     require("neotest").setup({
       -- your neotest config here
       adapters = {
-        require("neotest-ginkgo"),
+        require("neotest-go"),
       },
     })
   end,
@@ -47,7 +47,7 @@ enable experimental features or provide more arguments to `go test` command.
 ```lua
 require("neotest").setup({
   adapters = {
-    require("neotest-ginkgo")({
+    require("neotest-go")({
       experimental = {
         test_table = true,
       },
@@ -58,11 +58,10 @@ require("neotest").setup({
 ```
 
 By default `go test` runs for currecnt package only. If you want to run it recursively you need to set:
-
 ```lua
 require("neotest").setup({
   adapters = {
-    require("neotest-ginkgo")({
+    require("neotest-go")({
       recursive_run = true
     })
   }
