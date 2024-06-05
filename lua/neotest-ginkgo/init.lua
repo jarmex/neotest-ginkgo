@@ -35,7 +35,7 @@ function GoLangNeotestAdapter._generate_position_id(position, namespaces)
     end
   end
   local name = utils.transform_test_name(position.name)
-  return table.concat(vim.tbl_flatten({ position.path, prefix, name }), "::")
+  return table.concat(utils.tbl_flatten({ position.path, prefix, name }), "::")
 end
 
 ---@async
@@ -60,7 +60,6 @@ function GoLangNeotestAdapter.discover_positions(path)
   return lib.treesitter.parse_positions(path, query, {
     require_namespaces = true,
     nested_tests = true,
-    -- build_position = "require('neotest-ginkgo')._build_position",
     position_id = "require('neotest-ginkgo')._generate_position_id",
   })
 end
@@ -73,12 +72,7 @@ local function get_default_strategy_config(strategy, command, cwd)
         type = "go",
         request = "launch",
         mode = "test",
-        args = { unpack(command, 2) },
-        runtimeExecutable = command[1],
-        console = "integratedTerminal",
-        internalConsoleOptions = "neverOpen",
-        rootPath = "${workspaceFolder}",
-        cwd = cwd or "${workspaceFolder}",
+        program = "./${relativeFileDirname}",
       }
     end,
   }
@@ -110,7 +104,7 @@ GoLangNeotestAdapter.build_spec = function(args)
     location = fn.fnamemodify(position.path, ":h")
   end
 
-  local command = vim.tbl_flatten({
+  local command = utils.tbl_flatten({
     "cd",
     location,
     "&&",
@@ -132,17 +126,21 @@ GoLangNeotestAdapter.build_spec = function(args)
     vim.list_extend(command, { dir })
   end
 
-  -- print(vim.inspect(command))
-
-  return {
+  local return_result = {
     command = table.concat(command, " "),
     context = {
       results_path = results_path,
       file = position.path,
       name = position.name,
     },
-    strategy = get_default_strategy_config(args.strategy, command, position.path),
   }
+
+  -- print(vim.inspect(command))
+  if strategy == "dap" then
+    return_result.strategy = get_default_strategy_config(args.strategy, command, position.path),
+  end
+
+  return return_result
 end
 
 ---@async
