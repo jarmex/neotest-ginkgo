@@ -34,8 +34,8 @@ function GoLangNeotestAdapter._generate_position_id(position, namespaces)
       table.insert(prefix, namespace.name)
     end
   end
-  local name = utils.transform_test_name(position.name)
-  return table.concat(utils.tbl_flatten({ position.path, prefix, name }), "::")
+  -- local name = utils.transform_test_name(position.name)
+  return table.concat(utils.tbl_flatten({ position.path, prefix, position.name }), "::")
 end
 
 ---@async
@@ -81,6 +81,15 @@ local function get_default_strategy_config(strategy, command, cwd)
   end
 end
 
+local function split(str, sep)
+  local array = {}
+  local reg = string.format("([^%s]+)", sep)
+  for mem in string.gmatch(str, reg) do
+    table.insert(array, mem)
+  end
+  return array
+end
+
 ---@async
 ---@param args neotest.RunArgs
 ---@return nil | neotest.RunSpec | neotest.RunSpec[]
@@ -117,11 +126,17 @@ GoLangNeotestAdapter.build_spec = function(args)
   -- print(vim.inspect(position))
   if position.type == "test" or position.type == "namespace" then
     -- e.g.: id = '/Users/jarmex/Projects/go/testing/main_test.go::"Main"::can_multiply_up_two_numbers',
-    local testName = string.sub(position.id, string.find(position.id, "::") + 2)
-    testName, _ = string.gsub(testName, "::", " ")
-    testName, _ = string.gsub(testName, "_", " ") -- temporary fix for ginkgo
-    testName, _ = string.gsub(testName, '"', "")
-    vim.list_extend(command, { "--focus", '"' .. testName .. '"' })
+    -- split by "::"
+    local splitvalues = split(position.id, "::")
+    for key, value in ipairs(splitvalues) do
+      splitvalues[key] = string.gsub(value, '"', "")
+    end
+
+    local testToRun = table.concat(splitvalues, ".*", 2, #splitvalues)
+
+    -- print(vim.inspect(testToRun))
+
+    vim.list_extend(command, { "--focus", '"' .. testToRun .. '"' })
   else
     vim.list_extend(command, { dir })
   end
@@ -137,7 +152,7 @@ GoLangNeotestAdapter.build_spec = function(args)
 
   -- print(vim.inspect(command))
   if strategy == "dap" then
-    return_result.strategy = get_default_strategy_config(args.strategy, command, position.path),
+    return_result.strategy = get_default_strategy_config(args.strategy, command, position.path)
   end
 
   return return_result
@@ -159,6 +174,16 @@ function GoLangNeotestAdapter.results(spec, result, tree)
 end
 
 local isTestFailed = function(lines, testname)
+  local lastLine = lines[#lines]
+
+  if lastLine ~= nil and lastLine:find("Test Suite Passed") then
+    return test_statuses.pass
+  end
+
+  if lastLine ~= nil and lastLine:find("Test Suite Failed") then
+    return test_statuses.fail
+  end
+
   testname = string.gsub(testname, '"', "")
   local pattern = "%[%w+.*%].+%[It%]%s" .. testname
 
@@ -174,6 +199,16 @@ local isTestFailed = function(lines, testname)
 end
 
 local isTestAllFailed = function(lines)
+  local lastLine = lines[#lines]
+
+  if lastLine ~= nil and lastLine:find("Test Suite Passed") then
+    return test_statuses.pass
+  end
+
+  if lastLine ~= nil and lastLine:find("Test Suite Failed") then
+    return test_statuses.fail
+  end
+
   local pattern = "(%u+)!.+%d+%s*Passed.+%d+%s*Failed.+%d+%s*Pending.+%d+%s*Skipped"
 
   for _, text in ipairs(lines) do
